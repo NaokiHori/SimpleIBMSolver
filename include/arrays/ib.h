@@ -11,40 +11,24 @@
 #include "domain.h"
 
 /*** dux ***/
-#if NDIMS == 2
-#define DUX_SIZE_0 (isize+2)
-#define DUX_SIZE_1 (jsize+2)
-#define DUX(I, J) (dux[ (J  ) * DUX_SIZE_0 + (I  ) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
 #define DUX_SIZE_0 (isize+2)
 #define DUX_SIZE_1 (jsize+2)
 #define DUX_SIZE_2 (ksize+2)
 #define DUX(I, J, K) (dux[ (K  ) * DUX_SIZE_1 * DUX_SIZE_0 + (J  ) * DUX_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** dux ***/
 
 /*** duy ***/
-#if NDIMS == 2
-#define DUY_SIZE_0 (isize+2)
-#define DUY_SIZE_1 (jsize+2)
-#define DUY(I, J) (duy[ (J  ) * DUY_SIZE_0 + (I  ) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
 #define DUY_SIZE_0 (isize+2)
 #define DUY_SIZE_1 (jsize+2)
 #define DUY_SIZE_2 (ksize+2)
 #define DUY(I, J, K) (duy[ (K  ) * DUY_SIZE_1 * DUY_SIZE_0 + (J  ) * DUY_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** duy ***/
 
 /*** duz ***/
-#if NDIMS == 3
 #define DUZ_SIZE_0 (isize+2)
 #define DUZ_SIZE_1 (jsize+2)
 #define DUZ_SIZE_2 (ksize+2)
 #define DUZ(I, J, K) (duz[ (K  ) * DUZ_SIZE_1 * DUZ_SIZE_0 + (J  ) * DUZ_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** duz ***/
 
 #endif // ARRAYS_{name}_H

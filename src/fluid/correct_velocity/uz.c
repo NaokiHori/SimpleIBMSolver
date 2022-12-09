@@ -1,4 +1,3 @@
-#if NDIMS == 3
 
 #include "common.h"
 #include "domain.h"
@@ -36,4 +35,3 @@ int fluid_correct_velocity_uz(const domain_t * restrict domain, const double pre
   return 0;
 }
 
-#endif // NDIMS == 3

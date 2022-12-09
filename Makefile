@@ -1,5 +1,5 @@
 CC        := mpicc
-CFLAGS    := -std=c99 -Wall -Wextra -O3 -flto -ffast-math -DNDIMS=2
+CFLAGS    := -std=c99 -Wall -Wextra -O3 -flto -ffast-math -DNDIMS=3
 DEPEND    := -MMD
 LIBS      := -lfftw3 -lm
 INCLUDES  := -Iinclude

@@ -5,24 +5,6 @@
 #include "fluid.h"
 #include "temperature.h"
 
-#if NDIMS == 2
-
-/* ! definition of a structure statistics_t_ ! 13 ! */
-/** @struct statistics_t
- *  @brief struct storing statistics-related variables
- *  @var num          : number of samples which have been summed
- *  @var ux1, ux2     : mean and squared ux
- *  @var uy1, uy2     : mean and squared uy
- *  @var temp1, temp2 : mean and squared temp
- */
-typedef struct {
-  int num;
-  double *ux1, *ux2;
-  double *uy1, *uy2;
-  double *temp1, *temp2;
-} statistics_t;
-
-#else // NDIMS == 3
 
 /* ! definition of a structure statistics_t_ ! 15 ! */
 /** @struct statistics_t
@@ -41,7 +23,6 @@ typedef struct {
   double *temp1, *temp2;
 } statistics_t;
 
-#endif // NDIMS
 
 // next time to trigger collect
 extern double stat_next;

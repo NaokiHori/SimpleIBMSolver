@@ -6,121 +6,6 @@
 #include "arrays/statistics.h"
 
 
-#if NDIMS == 2
-
-/**
- * @brief save statistical data having ux^1, ux^2, uy^1, and uy^2
- * @param[in] dirname    : name of directory to which *.npy files will be written
- * @param[in] domain    : information related to MPI domain decomposition
- * @param[in] statistics : ux^1, ux^2, uy^1, and uy^2
- * @return               : error code
- */
-static int save_fluid(const char dirname[], const domain_t *domain, const statistics_t *statistics){
-  const int glisize = domain->glsizes[0];
-  const int gljsize = domain->glsizes[1];
-  const int   isize = domain->mysizes[0];
-  const int   jsize = domain->mysizes[1];
-  const int ioffset = domain->offsets[0];
-  const int joffset = domain->offsets[1];
-  // ux1, ux2: [1:isize+1] x [1:jsize]
-  {
-    const double *ux1 = statistics->ux1;
-    const double *ux2 = statistics->ux2;
-    const int glsizes[NDIMS] = {gljsize, glisize+1};
-    const int mysizes[NDIMS] = {  jsize,   isize+1};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    // ux1
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 1; i <= isize+1; i++){
-        buf[cnt] = UX1(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "ux1", NDIMS, glsizes, mysizes, offsets, buf);
-    // ux2
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 1; i <= isize+1; i++){
-        buf[cnt] = UX2(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "ux2", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  // uy1, uy2: [0:isize+1] x [1:jsize]
-  {
-    const double *uy1 = statistics->uy1;
-    const double *uy2 = statistics->uy2;
-    const int glsizes[NDIMS] = {gljsize, glisize+2};
-    const int mysizes[NDIMS] = {  jsize,   isize+2};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    // uy1
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = UY1(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "uy1", NDIMS, glsizes, mysizes, offsets, buf);
-    // uy2
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = UY2(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "uy2", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  return 0;
-}
-
-/**
- * @brief save statistical data having T^1 and T^2
- * @param[in] dirname    : name of directory to which *.npy files will be written
- * @param[in] domain    : information related to MPI domain decomposition
- * @param[in] statistics : T^1 and T^2
- * @return               : error code
- */
-static int save_temperature(const char dirname[], const domain_t *domain, const statistics_t *statistics){
-  const int glisize = domain->glsizes[0];
-  const int gljsize = domain->glsizes[1];
-  const int   isize = domain->mysizes[0];
-  const int   jsize = domain->mysizes[1];
-  const int ioffset = domain->offsets[0];
-  const int joffset = domain->offsets[1];
-  // temp1, temp2: [0:isize+1] x [1:jsize]
-  {
-    const double *temp1 = statistics->temp1;
-    const double *temp2 = statistics->temp2;
-    const int glsizes[NDIMS] = {gljsize, glisize+2};
-    const int mysizes[NDIMS] = {  jsize,   isize+2};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    // temp1
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = TEMP1(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "temp1", NDIMS, glsizes, mysizes, offsets, buf);
-    // temp2
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = TEMP2(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "temp2", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  return 0;
-}
-
-#else // NDIMS == 3
 
 /**
  * @brief save statistical data having ux^1, ux^2, uy^1, and uy^2
@@ -282,7 +167,6 @@ static int save_temperature(const char dirname[], const domain_t *domain, const 
   return 0;
 }
 
-#endif // NDIMS
 
 /**
  * @brief save structures which contains collected statistical data

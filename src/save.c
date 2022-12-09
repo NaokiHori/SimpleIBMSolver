@@ -15,108 +15,6 @@ static bool is_scheduled = false;
 static double save_rate;
 double save_next;
 
-#if NDIMS == 2
-
-/**
- * @brief save members in fluid_t
- * @param[in] dirname : name of directory to which *.npy files will be written
- * @param[in] domain  : information related to MPI domain decomposition
- * @param[in] fluid   : velocity, pressure
- * @return            : error code
- */
-int save_fluid(const char dirname[], const domain_t *domain, const fluid_t *fluid){
-  // pack arrays (ux, uy, p) into buffer without halo and write them to the corresponding file
-  const int glisize = domain->glsizes[0];
-  const int gljsize = domain->glsizes[1];
-  const int   isize = domain->mysizes[0];
-  const int   jsize = domain->mysizes[1];
-  const int ioffset = domain->offsets[0];
-  const int joffset = domain->offsets[1];
-  // ux: [1:isize+1] x [1:jsize]
-  {
-    const double *ux = fluid->ux;
-    const int glsizes[NDIMS] = {gljsize, glisize+1};
-    const int mysizes[NDIMS] = {  jsize,   isize+1};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 1; i <= isize+1; i++){
-        buf[cnt] = UX(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "ux", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  // uy: [0:isize+1] x [1:jsize]
-  {
-    const double *uy = fluid->uy;
-    const int glsizes[NDIMS] = {gljsize, glisize+2};
-    const int mysizes[NDIMS] = {  jsize,   isize+2};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = UY(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "uy", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  // p: [0:isize+1] x [1:jsize]
-  {
-    const double *p = fluid->p;
-    const int glsizes[NDIMS] = {gljsize, glisize+2};
-    const int mysizes[NDIMS] = {  jsize,   isize+2};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = P(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "p", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  return 0;
-}
-
-/**
- * @brief save members in temperature_t
- * @param[in] dirname     : name of directory to which *.npy files will be written
- * @param[in] domain      : information related to MPI domain decomposition
- * @param[in] temperature : temperature
- * @return                : error code
- */
-int save_temperature(const char dirname[], const domain_t *domain, const temperature_t *temperature){
-  const int glisize = domain->glsizes[0];
-  const int gljsize = domain->glsizes[1];
-  const int   isize = domain->mysizes[0];
-  const int   jsize = domain->mysizes[1];
-  const int ioffset = domain->offsets[0];
-  const int joffset = domain->offsets[1];
-  // temp: [0:isize+1] x [1:jsize]
-  {
-    const double *temp = temperature->temp;
-    const int glsizes[NDIMS] = {gljsize, glisize+2};
-    const int mysizes[NDIMS] = {  jsize,   isize+2};
-    const int offsets[NDIMS] = {joffset, ioffset  };
-    double *buf = common_calloc(mysizes[0]*mysizes[1], sizeof(double));
-    for(int cnt = 0, j = 1; j <= jsize; j++){
-      for(int i = 0; i <= isize+1; i++){
-        buf[cnt] = TEMP(i, j);
-        cnt++;
-      }
-    }
-    fileio_w_nd_parallel(dirname, "temp", NDIMS, glsizes, mysizes, offsets, buf);
-    common_free(buf);
-  }
-  return 0;
-}
-
-#else // NDIMS == 3
 
 /**
  * @brief save members in fluid_t
@@ -249,7 +147,6 @@ int save_temperature(const char dirname[], const domain_t *domain, const tempera
   return 0;
 }
 
-#endif // NDIMS
 
 /**
  * @brief save structures which contains essential information

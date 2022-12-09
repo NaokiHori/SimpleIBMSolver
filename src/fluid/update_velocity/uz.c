@@ -1,4 +1,3 @@
-#if NDIMS == 3
 
 #include <stdbool.h>
 #include <math.h>
@@ -174,4 +173,3 @@ int fluid_update_velocity_finalise_uz(void){
   return 0;
 }
 
-#endif // NDIMS

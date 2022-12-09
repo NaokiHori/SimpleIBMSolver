@@ -4,44 +4,6 @@
 #include "domain.h"
 #include "structure.h"
 
-#if NDIMS == 2
-
-typedef struct particle_t_ {
-  // fixed parameters
-  // radius
-  double r;
-  // gravity center,
-  // translational (x, y)
-  double x, y;
-  double dx, dy;
-  // translational and rotational velocities
-  double ux, uy, vz;
-  double dux, duy, dvz;
-  // surface forces and torque at k+1/2 step
-  // 1/m * \int_{S} a_i dS or 1/I * \int_{S} \epsilon_{ijk} \omega_j a_k dS
-  // a_i^k = \alpha^k ( U_i^k - u_i^* ) / ( \gamma \Delta t )
-  double fux, fuy, tvz;
-  // internal inertia, e.g.,
-  //   0: 1/C * \int_{V^{k  }} u_i^{k  } dV^{k  }
-  //   1: 1/C * \int_{V^{k+1}} u_i^{k+1} dV^{k+1}
-  // similar to the rotational component,
-  //   where C is a pre-factor, mass or moment of inertia
-  double iux[2], iuy[2], ivz[2];
-  // collision force based on k (0) and k+1 (1) step particle positions and velocities
-  double cfx[2], cfy[2];
-} particle_t;
-
-struct ib_t_ {
-  int n_particles;
-  particle_t **particles;
-  // responses of surface forces and torque on the momentum fields
-  double *dux, *duy;
-};
-
-extern double ib_s_weight(const double grid_size, const double r, const double px, const double py, const double x, const double y);
-extern double ib_v_weight(const double grid_size, const double r, const double px, const double py, const double x, const double y);
-
-#else // NDIMS == 3
 
 typedef struct particle_t_ {
   double r;
@@ -67,7 +29,6 @@ struct ib_t_ {
 extern double ib_s_weight(const double grid_size, const double r, const double px, const double py, const double pz, const double x, const double y, const double z);
 extern double ib_v_weight(const double grid_size, const double r, const double px, const double py, const double pz, const double x, const double y, const double z);
 
-#endif // NDIMS
 
 /* constructor and destructor */
 extern ib_t *ib_init(const domain_t *domain);

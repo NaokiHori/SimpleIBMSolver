@@ -16,46 +16,6 @@ int ib_decide_loop_size(const int lbound, const int ubound, const double grid_si
   return 0;
 }
 
-#if NDIMS == 2
-
-static double compute_signed_dist(const double grid_size, const double radius, const double px, const double py, const double x, const double y){
-  const double dx = x - px;
-  const double dy = y - py;
-  // inside: >0, outside: <0
-  const double dist
-    = radius
-    - sqrt(
-      + pow(dx, 2.)
-      + pow(dy, 2.)
-    );
-  return dist/grid_size;
-}
-
-double ib_s_weight(const double grid_size, const double radius, const double px, const double py, const double x, const double y){
-  double dist = compute_signed_dist(grid_size, radius, px, py, x, y);
-  return 0.5 * BETA * ( 1. - pow( tanh( BETA * dist ), 2.) );
-}
-
-double ib_v_weight(const double grid_size, const double radius, const double px, const double py, const double x, const double y){
-  double dist = compute_signed_dist(grid_size, radius, px, py, x, y);
-  return 0.5 * ( 1. + tanh( BETA * dist ) );
-}
-
-double ib_compute_volume(const double radius){
-  return M_PI * pow(radius, 2.);
-}
-
-double ib_compute_mass(const double den, const double radius){
-  double vol = ib_compute_volume(radius);
-  return den * vol;
-}
-
-double ib_compute_moment_of_inertia(const double den, const double radius){
-  double mass = ib_compute_mass(den, radius);
-  return 0.5 * mass * pow(radius, 2.);
-}
-
-#else // NDIMS == 3
 
 static double compute_signed_dist(const double grid_size, const double radius, const double px, const double py, const double pz, const double x, const double y, const double z){
   const double dx = x - px;
@@ -96,7 +56,6 @@ double ib_compute_moment_of_inertia(const double den, const double radius){
   return 0.4 * mass * pow(radius, 2.);
 }
 
-#endif // NDIMS
 
 #undef NEXTRA
 #undef BETA

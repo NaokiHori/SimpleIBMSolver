@@ -1,4 +1,3 @@
-#if NDIMS == 3
 
 #include "domain.h"
 #include "fluid.h"
@@ -27,4 +26,3 @@ int fluid_update_boundaries_uz(const domain_t * restrict domain, double * restri
   return 0;
 }
 
-#endif // NDIMS == 3

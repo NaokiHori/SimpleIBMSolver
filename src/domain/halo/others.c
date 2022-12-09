@@ -4,51 +4,6 @@
 #include "arrays/fluid.h"
 
 
-#if NDIMS == 2
-
-/**
- * @brief update halo cells of arrays whose shape is NOT ux-like
- * @param[in   ] domain  : information about domain decomposition and size
- * @param[inout] uy : array whose shape is NOT ux-like
- * @return          : error code
- */
-static int communicate_halo_others(const domain_t *domain, double *uy){
-  const int isize = domain->mysizes[0];
-  const int jsize = domain->mysizes[1];
-  /* ! update y halo values ! 29 ! */
-  {
-    const MPI_Comm comm = domain->sdecomp->comm_cart;
-    // check neighbour ranks, negative and positive
-    int ymrank, yprank;
-    MPI_Cart_shift(comm, 1, 1, &ymrank, &yprank);
-    // create datatype
-    MPI_Datatype dtype;
-    MPI_Type_contiguous(isize, MPI_DOUBLE, &dtype);
-    MPI_Type_commit(&dtype);
-    {
-      int size;
-      MPI_Type_size(dtype, &size);
-      assert(isize * sizeof(double) == (size_t)size);
-    }
-    // send in positive direction
-    MPI_Sendrecv(
-      &UY(1,   jsize), 1, dtype, yprank, 0,
-      &UY(1,       0), 1, dtype, ymrank, 0,
-      comm, MPI_STATUS_IGNORE
-    );
-    // send in negative direction
-    MPI_Sendrecv(
-      &UY(1,       1), 1, dtype, ymrank, 0,
-      &UY(1, jsize+1), 1, dtype, yprank, 0,
-      comm, MPI_STATUS_IGNORE
-    );
-    // clean-up used datatype
-    MPI_Type_free(&dtype);
-  }
-  return 0;
-}
-
-#else // NDIMS == 3
 
 /**
  * @brief update halo cells of arrays whose shape is NOT ux-like
@@ -123,7 +78,6 @@ static int communicate_halo_others(const domain_t *domain, double *uy){
   return 0;
 }
 
-#endif // NDIMS
 
 /**
  * @brief update halo cells of uy-like array
@@ -138,7 +92,6 @@ int domain_communicate_halo_uy_like(const domain_t *domain, double *uy_like){
   return 0;
 }
 
-#if NDIMS == 3
 
 /**
  * @brief update halo cells of uz-like array
@@ -153,7 +106,6 @@ int domain_communicate_halo_uz_like(const domain_t *domain, double *uz_like){
   return 0;
 }
 
-#endif
 
 /**
  * @brief update halo cells of p-like array
