@@ -11,105 +11,45 @@
 #include "domain.h"
 
 /*** ux1 ***/
-#if NDIMS == 2
 #define UX1_SIZE_0 (isize+1)
 #define UX1_SIZE_1 (jsize+2)
 #define UX1(I, J) (ux1[ (J  ) * UX1_SIZE_0 + (I-1) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
-#define UX1_SIZE_0 (isize+1)
-#define UX1_SIZE_1 (jsize+2)
-#define UX1_SIZE_2 (ksize+2)
-#define UX1(I, J, K) (ux1[ (K  ) * UX1_SIZE_1 * UX1_SIZE_0 + (J  ) * UX1_SIZE_0 + (I-1) ])
-#endif // NDIMS == 3
 /*** ux1 ***/
 
 /*** ux2 ***/
-#if NDIMS == 2
 #define UX2_SIZE_0 (isize+1)
 #define UX2_SIZE_1 (jsize+2)
 #define UX2(I, J) (ux2[ (J  ) * UX2_SIZE_0 + (I-1) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
-#define UX2_SIZE_0 (isize+1)
-#define UX2_SIZE_1 (jsize+2)
-#define UX2_SIZE_2 (ksize+2)
-#define UX2(I, J, K) (ux2[ (K  ) * UX2_SIZE_1 * UX2_SIZE_0 + (J  ) * UX2_SIZE_0 + (I-1) ])
-#endif // NDIMS == 3
 /*** ux2 ***/
 
 /*** uy1 ***/
-#if NDIMS == 2
 #define UY1_SIZE_0 (isize+2)
 #define UY1_SIZE_1 (jsize+2)
 #define UY1(I, J) (uy1[ (J  ) * UY1_SIZE_0 + (I  ) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
-#define UY1_SIZE_0 (isize+2)
-#define UY1_SIZE_1 (jsize+2)
-#define UY1_SIZE_2 (ksize+2)
-#define UY1(I, J, K) (uy1[ (K  ) * UY1_SIZE_1 * UY1_SIZE_0 + (J  ) * UY1_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** uy1 ***/
 
 /*** uy2 ***/
-#if NDIMS == 2
 #define UY2_SIZE_0 (isize+2)
 #define UY2_SIZE_1 (jsize+2)
 #define UY2(I, J) (uy2[ (J  ) * UY2_SIZE_0 + (I  ) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
-#define UY2_SIZE_0 (isize+2)
-#define UY2_SIZE_1 (jsize+2)
-#define UY2_SIZE_2 (ksize+2)
-#define UY2(I, J, K) (uy2[ (K  ) * UY2_SIZE_1 * UY2_SIZE_0 + (J  ) * UY2_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** uy2 ***/
 
 /*** uz1 ***/
-#if NDIMS == 3
-#define UZ1_SIZE_0 (isize+2)
-#define UZ1_SIZE_1 (jsize+2)
-#define UZ1_SIZE_2 (ksize+2)
-#define UZ1(I, J, K) (uz1[ (K  ) * UZ1_SIZE_1 * UZ1_SIZE_0 + (J  ) * UZ1_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** uz1 ***/
 
 /*** uz2 ***/
-#if NDIMS == 3
-#define UZ2_SIZE_0 (isize+2)
-#define UZ2_SIZE_1 (jsize+2)
-#define UZ2_SIZE_2 (ksize+2)
-#define UZ2(I, J, K) (uz2[ (K  ) * UZ2_SIZE_1 * UZ2_SIZE_0 + (J  ) * UZ2_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** uz2 ***/
 
 /*** temp1 ***/
-#if NDIMS == 2
 #define TEMP1_SIZE_0 (isize+2)
 #define TEMP1_SIZE_1 (jsize+2)
 #define TEMP1(I, J) (temp1[ (J  ) * TEMP1_SIZE_0 + (I  ) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
-#define TEMP1_SIZE_0 (isize+2)
-#define TEMP1_SIZE_1 (jsize+2)
-#define TEMP1_SIZE_2 (ksize+2)
-#define TEMP1(I, J, K) (temp1[ (K  ) * TEMP1_SIZE_1 * TEMP1_SIZE_0 + (J  ) * TEMP1_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** temp1 ***/
 
 /*** temp2 ***/
-#if NDIMS == 2
 #define TEMP2_SIZE_0 (isize+2)
 #define TEMP2_SIZE_1 (jsize+2)
 #define TEMP2(I, J) (temp2[ (J  ) * TEMP2_SIZE_0 + (I  ) ])
-#endif // NDIMS == 2
-#if NDIMS == 3
-#define TEMP2_SIZE_0 (isize+2)
-#define TEMP2_SIZE_1 (jsize+2)
-#define TEMP2_SIZE_2 (ksize+2)
-#define TEMP2(I, J, K) (temp2[ (K  ) * TEMP2_SIZE_1 * TEMP2_SIZE_0 + (J  ) * TEMP2_SIZE_0 + (I  ) ])
-#endif // NDIMS == 3
 /*** temp2 ***/
 
 #endif // ARRAYS_{name}_H

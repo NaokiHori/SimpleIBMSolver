@@ -4,7 +4,6 @@
 #include "domain.h"
 #include "structure.h"
 
-#if NDIMS == 2
 
 /* ! definition of a structure fluid_t_ ! 13 !*/
 /** @struct fluid_t_ (or fluid_t)
@@ -21,26 +20,6 @@ struct fluid_t_ {
   double *srcuya, *srcuyb, *srcuyg;
 };
 
-#else // NDIMS == 3
-
-/* ! definition of a structure fluid_t_ ! 15 !*/
-/** @struct fluid_t_ (or fluid_t)
- *  @brief struct storing fluid-related variables
- *  @var ux, uy, uz             : velocity in each direction
- *  @var p, psi                 : pressure, scalar potential \psi
- *  @var srcuxa, srcuxb, srcuxg : Runge-Kutta source terms, ux
- *  @var srcuya, srcuyb, srcuyg : Runge-Kutta source terms, uy
- *  @var srcuza, srcuzb, srcuzg : Runge-Kutta source terms, uz
- */
-struct fluid_t_ {
-  double *ux, *uy, *uz;
-  double *p, *psi;
-  double *srcuxa, *srcuxb, *srcuxg;
-  double *srcuya, *srcuyb, *srcuyg;
-  double *srcuza, *srcuzb, *srcuzg;
-};
-
-#endif
 
 // constructor and destructor
 extern fluid_t *fluid_init(const domain_t * restrict domain);
@@ -66,9 +45,6 @@ extern int fluid_update_pressure(const domain_t * restrict domain, const int rks
 // exchange halos and impose boundary conditions
 extern int fluid_update_boundaries_ux(const domain_t * restrict domain, double * restrict ux);
 extern int fluid_update_boundaries_uy(const domain_t * restrict domain, double * restrict uy);
-#if NDIMS == 3
-extern int fluid_update_boundaries_uz(const domain_t * restrict domain, double * restrict uz);
-#endif
 extern int fluid_update_boundaries_p (const domain_t * restrict domain, double * restrict  p);
 
 #endif // FLUID_H

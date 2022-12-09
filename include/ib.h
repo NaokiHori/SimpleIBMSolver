@@ -4,7 +4,6 @@
 #include "domain.h"
 #include "structure.h"
 
-#if NDIMS == 2
 
 typedef struct particle_t_ {
   // fixed parameters
@@ -41,33 +40,6 @@ struct ib_t_ {
 extern double ib_s_weight(const double grid_size, const double r, const double px, const double py, const double x, const double y);
 extern double ib_v_weight(const double grid_size, const double r, const double px, const double py, const double x, const double y);
 
-#else // NDIMS == 3
-
-typedef struct particle_t_ {
-  double r;
-  double x, y, z;
-  double dx, dy, dz;
-  double ux, uy, uz;
-  double vx, vy, vz;
-  double dux, duy, duz;
-  double dvx, dvy, dvz;
-  double fux, fuy, fuz;
-  double tvx, tvy, tvz;
-  double iux[2], iuy[2], iuz[2];
-  double ivx[2], ivy[2], ivz[2];
-  double cfx[2], cfy[2], cfz[2];
-} particle_t;
-
-struct ib_t_ {
-  int n_particles;
-  particle_t **particles;
-  double *dux, *duy, *duz;
-};
-
-extern double ib_s_weight(const double grid_size, const double r, const double px, const double py, const double pz, const double x, const double y, const double z);
-extern double ib_v_weight(const double grid_size, const double r, const double px, const double py, const double pz, const double x, const double y, const double z);
-
-#endif // NDIMS
 
 /* constructor and destructor */
 extern ib_t *ib_init(const domain_t *domain);

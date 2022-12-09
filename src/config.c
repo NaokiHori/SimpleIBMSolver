@@ -16,7 +16,6 @@ typedef struct dict_t_ {
 
 static dict_t **dict = NULL;
 
-#if NDIMS == 2
 
 /* ! available environmental variables ! 26 ! */
 static const char *keys[] = {
@@ -45,39 +44,6 @@ static const char *keys[] = {
   "Pr"
 };
 
-#else // NDIMS == 3
-
-/* ! available environmental variables ! 29 ! */
-static const char *keys[] = {
-  // name of environmental variables
-  "restart_sim",
-  "restart_dir",
-  "solve_temp",
-  "add_buoyancy",
-  "timemax",
-  "wtimemax",
-  "log_rate",
-  "log_after",
-  "save_rate",
-  "save_after",
-  "stat_rate",
-  "stat_after",
-  "lx",
-  "ly",
-  "lz",
-  "glisize",
-  "gljsize",
-  "glksize",
-  "implicitx",
-  "implicity",
-  "implicitz",
-  "coef_dt_adv",
-  "coef_dt_dif",
-  "Ra",
-  "Pr"
-};
-
-#endif
 
 static int get_nitems(void){
   // get number of keys,
