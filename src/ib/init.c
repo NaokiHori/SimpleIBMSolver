@@ -20,7 +20,8 @@ static ib_t *allocate(const domain_t *domain, const int n_particles){
   return ib;
 }
 
-static int init(const int n_particles, ib_t *ib){
+static int init(ib_t *ib){
+  const int n_particles = ib->n_particles;
   const char dirname[] = {"init_p"};
   // prepare buffers
   double *rs   = common_calloc(n_particles, sizeof(double));
@@ -71,7 +72,8 @@ static ib_t *allocate(const domain_t *domain, const int n_particles){
   return ib;
 }
 
-static int init(const int n_particles, ib_t *ib){
+static int init(ib_t *ib){
+  const int n_particles = ib->n_particles;
   const char dirname[] = {"init_p"};
   // prepare buffers
   double *rs   = common_calloc(n_particles, sizeof(double));
@@ -122,9 +124,11 @@ static int init(const int n_particles, ib_t *ib){
 #endif // NDIMS
 
 ib_t *ib_init(const domain_t *domain){
-  const int n_particles = 32;
+  const char dirname[] = {"init_p"};
+  int n_particles = 0;
+  fileio_r_0d_serial(dirname, "n_particles", NPYIO_INT, sizeof(int), &n_particles);
   ib_t *ib = allocate(domain, n_particles);
-  init(n_particles, ib);
+  init(ib);
   return ib;
 }
 
