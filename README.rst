@@ -4,10 +4,13 @@ Simple IBM Solver
 
 THIS IS AN ON-GOING PROJECT.
 
-|License|_ |LastCommit|_
+|License|_ |CI|_ |LastCommit|_
 
 .. |License| image:: https://img.shields.io/github/license/NaokiHori/SimpleIBMSolver
 .. _License: https://opensource.org/licenses/MIT
+
+.. |CI| image:: https://github.com/NaokiHori/SimpleIBMSolver/actions/workflows/ci.yml/badge.svg
+.. _CI: https://github.com/NaokiHori/SimpleIBMSolver/actions/workflows/ci.yml
 
 .. |LastCommit| image:: https://img.shields.io/github/last-commit/NaokiHori/SimpleIBMSolver/main
 .. _LastCommit: https://github.com/NaokiHori/SimpleIBMSolver/commits/main

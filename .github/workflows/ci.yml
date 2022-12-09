@@ -1,0 +1,80 @@
+name: CI
+
+on:
+
+  push:
+    branches:
+      - main
+    paths:
+      - include/**
+      - src/**
+      - .github/workflows/**
+      - .github/mytools/**
+
+jobs:
+
+  build:
+    name: Compile 2D and 3D sources
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dimension: [2, 3]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+        with:
+          repository: 'NaokiHori/SimpleIBMSolver'
+          ref: ${{ github.ref_name }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update && \
+          sudo apt-get -y install make libopenmpi-dev libfftw3-dev
+      - name: Modify Makefile
+        run: |
+          sed -i "s/DNDIMS=2/DNDIMS=${{ matrix.dimension }}/g" Makefile
+      - name: Compile
+        run: |
+          make all
+
+  push-nd:
+    name: Create branch 2D and 3D which only contains the dimension
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dimension: [2, 3]
+    needs: [build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+        with:
+          repository: 'NaokiHori/SimpleIBMSolver'
+          ref: ${{ github.ref_name }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get -y update && \
+          sudo apt-get -y install make libopenmpi-dev libfftw3-dev
+      - name: Remove another dimension
+        run: |
+          python .github/mytools/extract_nd.py ${{ matrix.dimension }}
+      - name: Modify Makefile
+        run: |
+          sed -i "s/DNDIMS=2/DNDIMS=${{ matrix.dimension }}/g" Makefile
+      - name: Compile
+        run: |
+          make all
+      - name: Commit change
+        run: |
+          git switch -c ${{ matrix.dimension }}d
+          git config --local user.email "action@github.com"
+          git config --local user.name "Actions Push ${{ matrix.dimension }}D"
+          git rm -r docs
+          git add src include Makefile
+          git commit -m "Extract ${{ matrix.dimension }}D sources" -a || true
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: ${{ matrix.dimension }}D
+          directory: "."
+          github_token: ${{ secrets.MY_GITHUB_TOKEN_SIBM }}
+          force: true
+
