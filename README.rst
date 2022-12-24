@@ -15,11 +15,11 @@ THIS IS AN ON-GOING PROJECT.
 .. |LastCommit| image:: https://img.shields.io/github/last-commit/NaokiHori/SimpleIBMSolver/main
 .. _LastCommit: https://github.com/NaokiHori/SimpleIBMSolver/commits/main
 
-.. image:: https://github.com/NaokiHori/SimpleIBMSolver/blob/main/docs/source/snapshot2d.png
+.. image:: https://github.com/NaokiHori/SimpleIBMSolver/blob/main/docs/source/thumbnail.gif
    :width: 100%
 
 .. image:: https://github.com/NaokiHori/SimpleIBMSolver/blob/main/docs/source/snapshot3d.png
-   :width: 50%
+   :width: 100%
 
 ********
 Overview
@@ -52,9 +52,9 @@ Quick start
 
 Please check the README of `SimpleNavierStokesSolver <https://github.com/NaokiHori/SimpleNavierStokesSolver>`_.
 
-****************
-Acknowledgements
-****************
+****
+Note
+****
 
-The immersed boundary method is based on `a publication <https://www.sciencedirect.com/science/article/pii/S0045793021003716>`_ with quite a few modifications.
+The immersed boundary method and the collision model is based on `a publication <https://www.sciencedirect.com/science/article/pii/S0045793021003716>`_ with quite a few modifications.
 
