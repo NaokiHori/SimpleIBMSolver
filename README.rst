@@ -10,12 +10,9 @@ Simple IBM Solver
 .. |LastCommit| image:: https://img.shields.io/github/last-commit/NaokiHori/SimpleIBMSolver/main
 .. _LastCommit: https://github.com/NaokiHori/SimpleIBMSolver/commits/main
 
-.. image:: https://github.com/NaokiHori/SimpleIBMSolver/blob/main/docs/source/thumbnail.gif
+.. image:: https://github.com/NaokiHori/SimpleIBMSolver/blob/main/docs/source/snapshot2d.png
    :target: https://youtu.be/nMAyrIYET10
    :width: 100%
-
-.. image:: https://github.com/NaokiHori/SimpleIBMSolver/blob/main/docs/source/snapshot3d.png
-   :width: 50%
 
 ********
 Overview

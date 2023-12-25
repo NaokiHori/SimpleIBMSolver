@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath("./conf_params"))
 
 project = "Simple IBM Solver"
 author = "Naoki Hori"
-copyright = f"2019-2023, {author}"
+copyright = f"2019, {author}"
 
 extensions = [
         "sphinx.ext.mathjax",
