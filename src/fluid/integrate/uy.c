@@ -11,9 +11,7 @@
 #include "array_macros/domain/dxc.h"
 #include "array_macros/fluid/ux.h"
 #include "array_macros/fluid/uy.h"
-#if NDIMS == 3
 #include "array_macros/fluid/uz.h"
-#endif
 #include "array_macros/fluid/p.h"
 
 // store approximation of laplacian
@@ -23,9 +21,7 @@ typedef struct {
   bool is_initialised;
   laplacian_t * lapx;
   laplacian_t lapy;
-#if NDIMS == 3
   laplacian_t lapz;
-#endif
 } laplacians_t;
 
 static laplacians_t laplacians = {
@@ -60,7 +56,6 @@ static int init_lap(
     laplacians.lapy[1] = - 2. / dy / dy;
     laplacians.lapy[2] = + 1. / dy / dy;
   }
-#if NDIMS == 3
   // Laplacian in z
   {
     const double dz = domain->dz;
@@ -68,19 +63,10 @@ static int init_lap(
     laplacians.lapz[1] = - 2. / dz / dz;
     laplacians.lapz[2] = + 1. / dz / dz;
   }
-#endif
   laplacians.is_initialised = true;
   return 0;
 }
 
-#if NDIMS == 2
-#define BEGIN \
-  for(int cnt = 0, j = 1; j <= jsize; j++){ \
-    for(int i = 1; i <= isize; i++, cnt++){
-#define END \
-    } \
-  }
-#else
 #define BEGIN \
   for(int cnt = 0, k = 1; k <= ksize; k++){ \
     for(int j = 1; j <= jsize; j++){ \
@@ -89,7 +75,6 @@ static int init_lap(
       } \
     } \
   }
-#endif
 
 static int advection_x(
     const domain_t * domain,
@@ -99,24 +84,8 @@ static int advection_x(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const double * restrict dxf = domain->dxf;
-#if NDIMS == 2
-  BEGIN
-    // uy is transported by ux
-    const double ux_l = + 0.5 * UX(i  , j-1) + 0.5 * UX(i  , j  );
-    const double ux_u = + 0.5 * UX(i+1, j-1) + 0.5 * UX(i+1, j  );
-    const double l = + 0.5 / DXF(i  ) * ux_l;
-    const double u = - 0.5 / DXF(i  ) * ux_u;
-    const double c = - l - u;
-    src[cnt] +=
-      + l * UY(i-1, j  )
-      + c * UY(i  , j  )
-      + u * UY(i+1, j  );
-  END
-#else
   BEGIN
     // uy is transported by ux
     const double ux_l = + 0.5 * UX(i  , j-1, k  ) + 0.5 * UX(i  , j  , k  );
@@ -129,7 +98,6 @@ static int advection_x(
       + c * UY(i  , j  , k  )
       + u * UY(i+1, j  , k  );
   END
-#endif
   return 0;
 }
 
@@ -140,24 +108,8 @@ static int advection_y(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const double dy = domain->dy;
-#if NDIMS == 2
-  BEGIN
-    // uy is transported by uy
-    const double uy_l = + 0.5 * UY(i  , j-1) + 0.5 * UY(i  , j  );
-    const double uy_u = + 0.5 * UY(i  , j  ) + 0.5 * UY(i  , j+1);
-    const double l = + 0.5 / dy * uy_l;
-    const double u = - 0.5 / dy * uy_u;
-    const double c = - l - u;
-    src[cnt] +=
-      + l * UY(i  , j-1)
-      + c * UY(i  , j  )
-      + u * UY(i  , j+1);
-  END
-#else
   BEGIN
     // uy is transported by uy
     const double uy_l = + 0.5 * UY(i  , j-1, k  ) + 0.5 * UY(i  , j  , k  );
@@ -170,11 +122,9 @@ static int advection_y(
       + c * UY(i  , j  , k  )
       + u * UY(i  , j+1, k  );
   END
-#endif
   return 0;
 }
 
-#if NDIMS == 3
 static int advection_z(
     const domain_t * domain,
     const double * restrict uy,
@@ -199,7 +149,6 @@ static int advection_z(
   END
   return 0;
 }
-#endif
 
 static int diffusion_x(
     const domain_t * domain,
@@ -209,20 +158,8 @@ static int diffusion_x(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const laplacian_t * restrict lapx = laplacians.lapx;
-#if NDIMS == 2
-  BEGIN
-    // uy is diffused in x
-    src[cnt] += diffusivity * (
-        + LAPX(i)[0] * UY(i-1, j  )
-        + LAPX(i)[1] * UY(i  , j  )
-        + LAPX(i)[2] * UY(i+1, j  )
-    );
-  END
-#else
   BEGIN
     // uy is diffused in x
     src[cnt] += diffusivity * (
@@ -231,7 +168,6 @@ static int diffusion_x(
         + LAPX(i)[2] * UY(i+1, j  , k  )
     );
   END
-#endif
   return 0;
 }
 
@@ -243,20 +179,8 @@ static int diffusion_y(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const laplacian_t * restrict lapy = &laplacians.lapy;
-#if NDIMS == 2
-  BEGIN
-    // uy is diffused in y
-    src[cnt] += diffusivity * (
-        + (*lapy)[0] * UY(i  , j-1)
-        + (*lapy)[1] * UY(i  , j  )
-        + (*lapy)[2] * UY(i  , j+1)
-    );
-  END
-#else
   BEGIN
     // uy is diffused in y
     src[cnt] += diffusivity * (
@@ -265,11 +189,9 @@ static int diffusion_y(
         + (*lapy)[2] * UY(i  , j+1, k  )
     );
   END
-#endif
   return 0;
 }
 
-#if NDIMS == 3
 static int diffusion_z(
     const domain_t * domain,
     const double diffusivity,
@@ -290,7 +212,6 @@ static int diffusion_z(
   END
   return 0;
 }
-#endif
 
 static int pressure(
     const domain_t * domain,
@@ -299,25 +220,14 @@ static int pressure(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const double dy = domain->dy;
-#if NDIMS == 2
-  BEGIN
-    src[cnt] -= 1. / dy * (
-        - P(i  , j-1)
-        + P(i  , j  )
-    );
-  END
-#else
   BEGIN
     src[cnt] -= 1. / dy * (
         - P(i  , j-1, k  )
         + P(i  , j  , k  )
     );
   END
-#endif
   return 0;
 }
 
@@ -338,9 +248,7 @@ int compute_rhs_uy(
   }
   const double * restrict ux = fluid->ux.data;
   const double * restrict uy = fluid->uy.data;
-#if NDIMS == 3
   const double * restrict uz = fluid->uz.data;
-#endif
   const double * restrict  p = fluid-> p.data;
   double * restrict srca = fluid->srcuy[rk_a].data;
   double * restrict srcg = fluid->srcuy[rk_g].data;
@@ -348,15 +256,11 @@ int compute_rhs_uy(
   // advective contributions, always explicit
   advection_x(domain, uy, ux, srca);
   advection_y(domain, uy,     srca);
-#if NDIMS == 3
   advection_z(domain, uy, uz, srca);
-#endif
   // diffusive contributions, can be explicit or implicit
   diffusion_x(domain, diffusivity, uy, param_m_implicit_x ? srcg : srca);
   diffusion_y(domain, diffusivity, uy, param_m_implicit_y ? srcg : srca);
-#if NDIMS == 3
   diffusion_z(domain, diffusivity, uy, param_m_implicit_z ? srcg : srca);
-#endif
   // pressure-gradient contribution, always implicit
   pressure(domain, p, srcg);
   return 0;
@@ -408,7 +312,6 @@ static int solve_in_y(
   return 0;
 }
 
-#if NDIMS == 3
 static int solve_in_z(
     const double prefactor,
     linear_system_t * linear_system
@@ -431,7 +334,6 @@ static int solve_in_z(
   tdm.solve(tdm_info, linear_system->z2pncl);
   return 0;
 }
-#endif
 
 /**
  * @brief update uy
@@ -456,16 +358,12 @@ int update_uy(
     const bool implicit[NDIMS] = {
       param_m_implicit_x,
       param_m_implicit_y,
-#if NDIMS == 3
       param_m_implicit_z,
-#endif
     };
     const size_t glsizes[NDIMS] = {
       domain->glsizes[0],
       domain->glsizes[1],
-#if NDIMS == 3
       domain->glsizes[2],
-#endif
     };
     if(0 != linear_system_init(domain->info, implicit, glsizes, &linear_system)){
       return 1;
@@ -481,15 +379,9 @@ int update_uy(
     const double * restrict srcuyg = fluid->srcuy[rk_g].data;
     const int isize = domain->mysizes[0];
     const int jsize = domain->mysizes[1];
-#if NDIMS == 3
     const int ksize = domain->mysizes[2];
-#endif
     double * restrict duy = linear_system.x1pncl;
-#if NDIMS == 2
-    const size_t nitems = isize * jsize;
-#else
     const size_t nitems = isize * jsize * ksize;
-#endif
     for(size_t n = 0; n < nitems; n++){
       duy[n] =
         + coef_a * dt * srcuya[n]
@@ -524,7 +416,6 @@ int update_uy(
         linear_system.x1pncl
     );
   }
-#if NDIMS == 3
   // solve linear systems in z
   if(param_m_implicit_z){
     sdecomp.transpose.execute(
@@ -542,25 +433,16 @@ int update_uy(
         linear_system.x1pncl
     );
   }
-#endif
   // the field is actually updated here
   {
     const int isize = domain->mysizes[0];
     const int jsize = domain->mysizes[1];
-#if NDIMS == 3
     const int ksize = domain->mysizes[2];
-#endif
     const double * restrict duy = linear_system.x1pncl;
     double * restrict uy = fluid->uy.data;
-#if NDIMS == 2
-    BEGIN
-      UY(i, j) += duy[cnt];
-    END
-#else
     BEGIN
       UY(i, j, k) += duy[cnt];
     END
-#endif
     if(0 != fluid_update_boundaries_uy(domain, &fluid->uy)){
       return 1;
     }

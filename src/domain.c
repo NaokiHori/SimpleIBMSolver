@@ -3,10 +3,8 @@
 #include <math.h>
 #include <float.h>
 #include <mpi.h>
-#if NDIMS == 3
 #include <fftw3.h>
 #include "timer.h"
-#endif
 #include "sdecomp.h"
 #include "memory.h"
 #include "domain.h"
@@ -76,7 +74,6 @@ int domain_save(
   return 0;
 }
 
-#if NDIMS == 3
 static int get_ndigits(
     int num
 ){
@@ -247,7 +244,6 @@ static int optimise_sdecomp_init(
   }
   return 0;
 }
-#endif
 
 /**
  * @brief define face-to-face distances in x direction
@@ -333,9 +329,7 @@ int domain_init(
   double * restrict * dxc   = &domain->dxc;
   double * restrict   dx    = &domain->dx;
   double * restrict   dy    = &domain->dy;
-#if NDIMS == 3
   double * restrict   dz    = &domain->dz;
-#endif
   // load spatial information
   if(0 != domain_load(dirname_ic, domain)){
     return 1;
@@ -347,24 +341,12 @@ int domain_init(
   // grid sizes
   *dx = lengths[0] / glsizes[0];
   *dy = lengths[1] / glsizes[1];
-#if NDIMS == 3
   *dz = lengths[2] / glsizes[2];
-#endif
   // initialise sdecomp to distribute the domain
-#if NDIMS == 2
-  if(0 != sdecomp.construct(
-        MPI_COMM_WORLD,
-        NDIMS,
-        (size_t [NDIMS]){0, 0},
-        (bool [NDIMS]){false, true},
-        info
-  )) return 1;
-#else
   if(0 != optimise_sdecomp_init(
         glsizes,
         info
   )) return 1;
-#endif
   // local array sizes and offsets
   for(size_t dim = 0; dim < NDIMS; dim++){
     sdecomp.get_pencil_mysize(*info, SDECOMP_X1PENCIL, dim, glsizes[dim], mysizes + dim);

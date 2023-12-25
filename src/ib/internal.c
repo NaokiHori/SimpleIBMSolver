@@ -27,16 +27,12 @@ static double compute_signed_dist(
   const double deltas[NDIMS] = {
     point[0] - center[0],
     point[1] - center[1],
-#if NDIMS == 3
     point[2] - center[2],
-#endif
   };
   double dist = sqrt(
       + deltas[0] * deltas[0]
       + deltas[1] * deltas[1]
-#if NDIMS == 3
       + deltas[2] * deltas[2]
-#endif
   );
   // convert it such that inside: >0, outside: <0
   dist = radius - dist;
