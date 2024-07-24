@@ -146,6 +146,7 @@ int ib_init(
     ps[n].vz = vzs[n];
   }
   memory_free(rs);
+  memory_free(ds);
   memory_free(xs);
   memory_free(ys);
 #if NDIMS == 3

@@ -108,6 +108,7 @@ int ib_save(
     return 1;
   }
   memory_free(rs);
+  memory_free(ds);
   memory_free(xs);
   memory_free(ys);
 #if NDIMS == 3
