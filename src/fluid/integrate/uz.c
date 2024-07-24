@@ -1,4 +1,3 @@
-#if NDIMS == 3
 #include "param.h"
 #include "memory.h"
 #include "runge_kutta.h"
@@ -450,4 +449,3 @@ int update_uz(
   }
   return 0;
 }
-#endif

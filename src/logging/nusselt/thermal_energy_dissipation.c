@@ -13,40 +13,14 @@ static double get_x_contribution(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const double * restrict dxf = domain->dxf;
   const double * restrict dxc = domain->dxc;
   const double dy = domain->dy;
-#if NDIMS == 3
   const double dz = domain->dz;
-#endif
   const double * restrict t = fluid->t.data;
   const double diffusivity = fluid->t_dif;
   double dissipation = 0.;
-#if NDIMS == 2
-  for(int j = 1; j <= jsize; j++){
-    for(int i = 1; i <= isize; i++){
-      // x contribution
-      const double cellsize = DXF(i  ) * dy;
-      // negative direction
-      {
-        const double dtdx = 1. / DXC(i  ) * (T(i  , j  ) - T(i-1, j  ));
-        const double w0 = DXC(i  ) / DXF(i  );
-        const double w1 = 1 == i ? 2. : 1.;
-        dissipation += diffusivity * 0.5 * w0 * w1 * pow(dtdx, 2.) * cellsize;
-      }
-      // positive direction
-      {
-        const double dtdx = 1. / DXC(i+1) * (T(i+1, j  ) - T(i  , j  ));
-        const double w0 = DXC(i+1) / DXF(i  );
-        const double w1 = isize == i ? 2. : 1.;
-        dissipation += diffusivity * 0.5 * w0 * w1 * pow(dtdx, 2.) * cellsize;
-      }
-    }
-  }
-#else
   for(int k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 1; i <= isize; i++){
@@ -69,7 +43,6 @@ static double get_x_contribution(
       }
     }
   }
-#endif
   return dissipation;
 }
 
@@ -79,35 +52,13 @@ static double get_y_contribution(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const double * restrict dxf = domain->dxf;
   const double dy = domain->dy;
-#if NDIMS == 3
   const double dz = domain->dz;
-#endif
   const double * restrict t = fluid->t.data;
   const double diffusivity = fluid->t_dif;
   double dissipation = 0.;
-#if NDIMS == 2
-  for(int j = 1; j <= jsize; j++){
-    for(int i = 1; i <= isize; i++){
-      // y contribution
-      const double cellsize = DXF(i  ) * dy;
-      // negative direction
-      {
-        const double dtdy = 1. / dy * (T(i  , j  ) - T(i  , j-1));
-        dissipation += diffusivity * 0.5 * pow(dtdy, 2.) * cellsize;
-      }
-      // positive direction
-      {
-        const double dtdy = 1. / dy * (T(i  , j+1) - T(i  , j  ));
-        dissipation += diffusivity * 0.5 * pow(dtdy, 2.) * cellsize;
-      }
-    }
-  }
-#else
   for(int k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 1; i <= isize; i++){
@@ -126,11 +77,9 @@ static double get_y_contribution(
       }
     }
   }
-#endif
   return dissipation;
 }
 
-#if NDIMS == 3
 static double get_z_contribution(
     const domain_t * domain,
     const fluid_t * fluid
@@ -164,7 +113,6 @@ static double get_z_contribution(
   }
   return dissipation;
 }
-#endif
 
 /**
  * @brief compute Nusselt number based on thermal dissipation
@@ -187,9 +135,7 @@ double logging_internal_compute_nu_thermal_energy_dissipation(
   double retval = 0.;
   retval += get_x_contribution(domain, fluid);
   retval += get_y_contribution(domain, fluid);
-#if NDIMS == 3
   retval += get_z_contribution(domain, fluid);
-#endif
   const void * sendbuf = root == myrank ? MPI_IN_PLACE : &retval;
   void * recvbuf = &retval;
   MPI_Reduce(sendbuf, recvbuf, 1, MPI_DOUBLE, MPI_SUM, root, comm_cart);
