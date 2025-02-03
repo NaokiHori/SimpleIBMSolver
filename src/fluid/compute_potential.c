@@ -15,9 +15,7 @@
 #include "array_macros/domain/dxc.h"
 #include "array_macros/fluid/ux.h"
 #include "array_macros/fluid/uy.h"
-#if NDIMS == 3
 #include "array_macros/fluid/uz.h"
-#endif
 #include "array_macros/fluid/psi.h"
 
 // structure only used to solve Poisson equation
@@ -28,19 +26,15 @@ typedef struct {
   void * restrict buf0;
   void * restrict buf1;
   fftw_plan fftw_plan_x[2];
-#if NDIMS == 3
   fftw_plan fftw_plan_y[2];
   fftw_plan fftw_plan_z[2];
-#endif
   size_t tdm_sizes[2];
   tdm_info_t * tdm_info;
   double * evals;
   sdecomp_transpose_plan_t * r_transposer_x1_to_y1;
   sdecomp_transpose_plan_t * r_transposer_y1_to_x1;
-#if NDIMS == 3
   sdecomp_transpose_plan_t * c_transposer_y1_to_z1;
   sdecomp_transpose_plan_t * c_transposer_z1_to_y1;
-#endif
 } poisson_solver_t;
 
 /* initialise Poisson solver */
@@ -57,20 +51,16 @@ typedef struct {
 // NOTE: define globally to reduce the number of arguments of static functions
 // global domain size in real space
 static size_t r_gl_sizes[NDIMS] = {0};
-#if NDIMS == 3
 // global domain size in complex space
 static size_t c_gl_sizes[NDIMS] = {0};
-#endif
 // local domain size (x1 pencil) in real space
 static size_t r_x1pncl_sizes[NDIMS] = {0};
 // local domain size (y1 pencil) in real space
 static size_t r_y1pncl_sizes[NDIMS] = {0};
-#if NDIMS == 3
 // local domain size (y1 pencil) in complex space
 static size_t c_y1pncl_sizes[NDIMS] = {0};
 // local domain size (z1 pencil) in complex space
 static size_t c_z1pncl_sizes[NDIMS] = {0};
-#endif
 
 static size_t prod(
     const size_t sizes[NDIMS]
@@ -118,24 +108,18 @@ static int compute_pencil_sizes(
   const sdecomp_info_t * info = domain->info;
   r_gl_sizes[0] = domain->glsizes[0];
   r_gl_sizes[1] = domain->glsizes[1];
-#if NDIMS == 3
   r_gl_sizes[2] = domain->glsizes[2];
-#endif
-#if NDIMS == 3
   // global domain size in complex space
   // NOTE: Hermite symmetry in y
   c_gl_sizes[0] = domain->glsizes[0];
   c_gl_sizes[1] = domain->glsizes[1] / 2 + 1;
   c_gl_sizes[2] = domain->glsizes[2];
-#endif
   // local domain sizes
   for(sdecomp_dir_t dim = 0; dim < NDIMS; dim++){
     if(0 != sdecomp.get_pencil_mysize(info, SDECOMP_X1PENCIL, dim, r_gl_sizes[dim], r_x1pncl_sizes + dim)) return 1;
     if(0 != sdecomp.get_pencil_mysize(info, SDECOMP_Y1PENCIL, dim, r_gl_sizes[dim], r_y1pncl_sizes + dim)) return 1;
-#if NDIMS == 3
     if(0 != sdecomp.get_pencil_mysize(info, SDECOMP_Y1PENCIL, dim, c_gl_sizes[dim], c_y1pncl_sizes + dim)) return 1;
     if(0 != sdecomp.get_pencil_mysize(info, SDECOMP_Z1PENCIL, dim, c_gl_sizes[dim], c_z1pncl_sizes + dim)) return 1;
-#endif
   }
   return 0;
 }
@@ -149,18 +133,9 @@ static int allocate_buffers(
   void * restrict * buf0 = &poisson_solver->buf0;
   void * restrict * buf1 = &poisson_solver->buf1;
   const size_t r_dsize = sizeof(double);
-#if NDIMS == 3
   const size_t c_dsize = sizeof(fftw_complex);
-#endif
   size_t buf0_bytes = 0;
   size_t buf1_bytes = 0;
-#if NDIMS == 2
-  // r_x1pncl -> FFT -> r_x1pncl -> rotate -> r_y1pncl
-  // buffer0            buffer1               buffer0
-  buf0_bytes = max(buf0_bytes, r_dsize * prod(r_x1pncl_sizes));
-  buf0_bytes = max(buf0_bytes, r_dsize * prod(r_y1pncl_sizes));
-  buf1_bytes = max(buf1_bytes, r_dsize * prod(r_x1pncl_sizes));
-#else
   // r_x1pncl -> FFT -> r_x1pncl -> rotate -> r_y1pncl -> FFT -> c_y1pncl -> rotate -> c_z1pncl
   // buffer0            buffer1               buffer0            buffer1               buffer0
   buf0_bytes = max(buf0_bytes, r_dsize * prod(r_x1pncl_sizes));
@@ -168,7 +143,6 @@ static int allocate_buffers(
   buf0_bytes = max(buf0_bytes, c_dsize * prod(c_z1pncl_sizes));
   buf1_bytes = max(buf1_bytes, r_dsize * prod(r_x1pncl_sizes));
   buf1_bytes = max(buf1_bytes, c_dsize * prod(c_y1pncl_sizes));
-#endif
   // allocate them using fftw_malloc to enforce them 16bit-aligned for SIMD
   *buf0 = fftw_malloc(buf0_bytes);
   if(NULL == *buf0){
@@ -200,28 +174,6 @@ static int init_tri_diagonal_solver(
   //   in the solver
   size_t * restrict tdm_sizes = poisson_solver->tdm_sizes;
   tdm_info_t ** tdm_info = &poisson_solver->tdm_info;
-#if NDIMS == 2
-  // in y: d^2p / dy^2 = q
-  tdm_sizes[0] = r_y1pncl_sizes[1];
-  tdm_sizes[1] = r_y1pncl_sizes[0];
-  if(0 != tdm.construct(
-    /* size of system */ tdm_sizes[0],
-    /* number of rhs  */ 1,
-    /* is periodic    */ true,
-    /* is complex     */ false,
-    /* output         */ tdm_info
-  )) return 1;
-  // initialise tri-diagonal matrix in y direction
-  double * tdm_l = NULL;
-  double * tdm_u = NULL;
-  tdm.get_l(*tdm_info, &tdm_l);
-  tdm.get_u(*tdm_info, &tdm_u);
-  const double dy = domain->dy;
-  for(size_t j = 0; j < tdm_sizes[0]; j++){
-    tdm_l[j] = 1. / dy / dy;
-    tdm_u[j] = 1. / dy / dy;
-  }
-#else
   // in z: d^2p / dz^2 = q
   tdm_sizes[0] = c_z1pncl_sizes[2];
   tdm_sizes[1] = c_z1pncl_sizes[0] * c_z1pncl_sizes[1];
@@ -242,7 +194,6 @@ static int init_tri_diagonal_solver(
     tdm_l[k] = 1. / dz / dz;
     tdm_u[k] = 1. / dz / dz;
   }
-#endif
   return 0;
 }
 
@@ -252,9 +203,7 @@ static int init_pencil_rotations(
 ){
   const sdecomp_info_t * info = domain->info;
   const size_t r_dsize = sizeof(double);
-#if NDIMS == 3
   const size_t c_dsize = sizeof(fftw_complex);
-#endif
   if(0 != sdecomp.transpose.construct(info, SDECOMP_X1PENCIL, SDECOMP_Y1PENCIL, r_gl_sizes, r_dsize, &poisson_solver->r_transposer_x1_to_y1)){
     report_failure("SDECOMP x1 to y1 for real");
     return 1;
@@ -263,7 +212,6 @@ static int init_pencil_rotations(
     report_failure("SDECOMP y1 to x1 for real");
     return 1;
   }
-#if NDIMS == 3
   if(0 != sdecomp.transpose.construct(info, SDECOMP_Y1PENCIL, SDECOMP_Z1PENCIL, c_gl_sizes, c_dsize, &poisson_solver->c_transposer_y1_to_z1)){
     report_failure("SDECOMP y1 to z1 for complex");
     return 1;
@@ -272,7 +220,6 @@ static int init_pencil_rotations(
     report_failure("SDECOMP z1 to y1 for complex");
     return 1;
   }
-#endif
   return 0;
 }
 
@@ -285,11 +232,7 @@ static int init_ffts(
   // x, real to real
   {
     const int signal_length = r_x1pncl_sizes[SDECOMP_XDIR];
-#if NDIMS == 2
-    const int repeat_for = r_x1pncl_sizes[SDECOMP_YDIR];
-#else
     const int repeat_for = r_x1pncl_sizes[SDECOMP_YDIR] * r_x1pncl_sizes[SDECOMP_ZDIR];
-#endif
     fftw_plan * fplan = &poisson_solver->fftw_plan_x[0];
     fftw_plan * bplan = &poisson_solver->fftw_plan_x[1];
     *fplan = fftw_plan_many_r2r(
@@ -313,7 +256,6 @@ static int init_ffts(
       return 1;
     }
   }
-#if NDIMS == 3
   // y, real / complex
   {
     fftw_plan * fplan = &poisson_solver->fftw_plan_y[0];
@@ -342,7 +284,6 @@ static int init_ffts(
       return 1;
     }
   }
-#endif
   return 0;
 }
 
@@ -353,29 +294,6 @@ static int init_eigenvalues(
   const double pi = 3.14159265358979324;
   const sdecomp_info_t * info = domain->info;
   double ** evals = &poisson_solver->evals;
-#if NDIMS == 2
-  // y1 pencil, DCT in x
-  const sdecomp_pencil_t pencil = SDECOMP_Y1PENCIL;
-  const double signal_lengths[NDIMS - 1] = {
-    2. * r_gl_sizes[SDECOMP_XDIR],
-  };
-  size_t mysizes[NDIMS - 1] = {0};
-  sdecomp.get_pencil_mysize(info, pencil, SDECOMP_XDIR, r_gl_sizes[SDECOMP_XDIR], mysizes);
-  size_t offsets[NDIMS - 1] = {0};
-  sdecomp.get_pencil_offset(info, pencil, SDECOMP_XDIR, r_gl_sizes[SDECOMP_XDIR], offsets);
-  const double gridsizes[NDIMS - 1] = {
-    domain->lengths[SDECOMP_XDIR] / r_gl_sizes[SDECOMP_XDIR],
-  };
-  // initialise eigenvalues in homogeneous directions
-  *evals = memory_calloc(mysizes[0], sizeof(double));
-  for(size_t cnt = 0, i = offsets[0]; i < mysizes[0] + offsets[0]; i++, cnt++){
-    (*evals)[cnt] =
-      - 4. / pow(gridsizes[0], 2.) * pow(
-        sin( pi * i / signal_lengths[0] ),
-        2.
-    );
-  }
-#else
   // z1 pencil, DCT in x and DFT in y
   const sdecomp_pencil_t pencil = SDECOMP_Z1PENCIL;
   const double signal_lengths[NDIMS - 1] = {
@@ -407,7 +325,6 @@ static int init_eigenvalues(
         );
     }
   }
-#endif
   return 0;
 }
 
@@ -442,41 +359,16 @@ static int assign_input(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const double * restrict dxf = domain->dxf;
   const double dy = domain->dy;
-#if NDIMS == 3
   const double dz = domain->dz;
-#endif
   const double * restrict ux = fluid->ux.data;
   const double * restrict uy = fluid->uy.data;
-#if NDIMS == 3
   const double * restrict uz = fluid->uz.data;
-#endif
   // normalise FFT beforehand
-#if NDIMS == 2
-  const double norm = 2. * domain->glsizes[0];
-#else
   const double norm = 2. * domain->glsizes[0] * domain->glsizes[1];
-#endif
   const double prefactor = 1. / (rkcoefs[rkstep][rk_g] * dt) / norm;
-#if NDIMS == 2
-  for(int cnt = 0, j = 1; j <= jsize; j++){
-    for(int i = 1; i <= isize; i++, cnt++){
-      const double dx = DXF(i  );
-      const double ux_xm = UX(i  , j  );
-      const double ux_xp = UX(i+1, j  );
-      const double uy_ym = UY(i  , j  );
-      const double uy_yp = UY(i  , j+1);
-      rhs[cnt] = prefactor * (
-         + (ux_xp - ux_xm) / dx
-         + (uy_yp - uy_ym) / dy
-      );
-    }
-  }
-#else
   for(int cnt = 0, k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 1; i <= isize; i++, cnt++){
@@ -495,7 +387,6 @@ static int assign_input(
       }
     }
   }
-#endif
   return 0;
 }
 
@@ -506,17 +397,8 @@ static int extract_output(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   double * restrict psi = fluid->psi.data;
-#if NDIMS == 2
-  for(int cnt = 0, j = 1; j <= jsize; j++){
-    for(int i = 1; i <= isize; i++, cnt++){
-      PSI(i, j) = rhs[cnt];
-    }
-  }
-#else
   for(int cnt = 0, k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 1; i <= isize; i++, cnt++){
@@ -524,7 +406,6 @@ static int extract_output(
       }
     }
   }
-#endif
   if(0 != fluid_update_boundaries_psi(domain, &fluid->psi)){
     return 1;
   }
@@ -550,11 +431,7 @@ static int solve_linear_systems(
   tdm.get_c(tdm_info, &tdm_c);
   // eigenvalues coming from Fourier projection
   const double * restrict evals = poisson_solver->evals;
-#if NDIMS == 2
-  double * restrict rhs = poisson_solver->buf0;
-#else
   fftw_complex * restrict rhs = poisson_solver->buf0;
-#endif
   for(size_t m = 0; m < repeat_for; m++){
     // set center diagonal components
     for(size_t n = 0; n < size_of_system; n++){
@@ -606,7 +483,6 @@ int fluid_compute_potential(
       poisson_solver.buf1,
       poisson_solver.buf0
   );
-#if NDIMS == 3
   // project y to wave space
   // f(k_x, y, z) -> f(k_x, k_y, z)
   // from buf0 to buf1
@@ -618,10 +494,8 @@ int fluid_compute_potential(
       poisson_solver.buf1,
       poisson_solver.buf0
   );
-#endif
   // solve linear systems
   solve_linear_systems(&poisson_solver);
-#if NDIMS == 3
   // transpose complex z1pencil to y1pencil
   // from buf0 to buf1
   sdecomp.transpose.execute(
@@ -633,7 +507,6 @@ int fluid_compute_potential(
   // f(k_x, k_y, z) -> f(k_x, y, z)
   // from buf1 to buf0
   fftw_execute(poisson_solver.fftw_plan_y[1]);
-#endif
   // transpose real y1pencil to x1pencil
   // from buf0 to buf1
   sdecomp.transpose.execute(

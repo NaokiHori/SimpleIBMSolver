@@ -7,14 +7,8 @@ double logging_internal_compute_reference_heat_flux(
 ){
   // compute laminar heat flux
   const double ly = domain->lengths[1];
-#if NDIMS == 3
   const double lz = domain->lengths[2];
-#endif
   const double diffusivity = fluid->t_dif;
-#if NDIMS == 2
-  return diffusivity * ly;
-#else
   return diffusivity * ly * lz;
-#endif
 }
 

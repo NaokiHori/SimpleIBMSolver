@@ -12,14 +12,10 @@
 #include "internal.h"
 #include "array_macros/fluid/ux.h"
 #include "array_macros/fluid/uy.h"
-#if NDIMS == 3
 #include "array_macros/fluid/uz.h"
-#endif
 #include "array_macros/ib/ibfx.h"
 #include "array_macros/ib/ibfy.h"
-#if NDIMS == 3
 #include "array_macros/ib/ibfz.h"
-#endif
 
 static int update_boundaries(
     const domain_t * domain,
@@ -27,18 +23,14 @@ static int update_boundaries(
 ){
   static MPI_Datatype dtypes[NDIMS - 1] = {
     MPI_DOUBLE,
-#if NDIMS == 3
     MPI_DOUBLE,
-#endif
   };
   if(0 != halo_communicate_in_y(domain, dtypes + 0, arr)){
     return 1;
   }
-#if NDIMS == 3
   if(0 != halo_communicate_in_z(domain, dtypes + 1, arr)){
     return 1;
   }
-#endif
   return 0;
 }
 
@@ -50,78 +42,46 @@ static int exchange_momentum(
 ){
   // \int -fx dV
   // \int -fy dV
-#if NDIMS == 3
   // \int -fz dV
-#endif
-#if NDIMS == 3
   // \int ( + rz fy - ry fz ) dV
   // \int ( + rx fz - rz fx ) dV
-#endif
   // \int ( + ry fx - rx fy ) dV
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   const int ioffs = domain->offsets[0];
   const int joffs = domain->offsets[1];
-#if NDIMS == 3
   const int koffs = domain->offsets[2];
-#endif
   const double ly = domain->lengths[1];
-#if NDIMS == 3
   const double lz = domain->lengths[2];
-#endif
   const double dx = domain->dx;
   const double dy = domain->dy;
-#if NDIMS == 3
   const double dz = domain->dz;
-#endif
-#if NDIMS == 2
-  const double deltas[NDIMS] = {dx, dy};
-#else
   const double deltas[NDIMS] = {dx, dy, dz};
-#endif
-#if NDIMS == 2
-  const double cellsize = dx * dy;
-#else
   const double cellsize = dx * dy * dz;
-#endif
   const double xoffs = dx * ioffs;
   const double yoffs = dy * joffs;
-#if NDIMS == 3
   const double zoffs = dz * koffs;
-#endif
   const double * ux = fluid->ux.data;
   const double * uy = fluid->uy.data;
-#if NDIMS == 3
   const double * uz = fluid->uz.data;
-#endif
   const size_t nitems = ib->nitems;
   particle_t * particles = ib->particles;
   double * ibfx = ib->ibfx.data;
   double * ibfy = ib->ibfy.data;
-#if NDIMS == 3
   double * ibfz = ib->ibfz.data;
-#endif
   for(size_t n = 0; n < nitems; n++){
     particle_t * p = particles + n;
     // constant parameters
     const double pr  = p->r;
     const double px  = p->x;
     const double py  = p->y;
-#if NDIMS == 3
     const double pz  = p->z;
-#endif
     const double pux = p->ux;
     const double puy = p->uy;
-#if NDIMS == 3
     const double puz = p->uz;
-#endif
-#if NDIMS == 3
     const double pvx = p->vx;
     const double pvy = p->vy;
-#endif
     const double pvz = p->vz;
     // mass and moment of inertia
     const double pm  = p->m;
@@ -129,59 +89,16 @@ static int exchange_momentum(
     // targets
     double * fux = &p->fux;
     double * fuy = &p->fuy;
-#if NDIMS == 3
     double * fuz = &p->fuz;
-#endif
-#if NDIMS == 3
     double * tvx = &p->tvx;
     double * tvy = &p->tvy;
-#endif
     double * tvz = &p->tvz;
     *fux = 0.;
     *fuy = 0.;
-#if NDIMS == 3
     *fuz = 0.;
-#endif
-#if NDIMS == 3
     *tvx = 0.;
     *tvy = 0.;
-#endif
     *tvz = 0.;
-#if NDIMS == 2
-    for(int yper = -1; yper <= 1; yper++){
-      const double py_ = py + ly * yper;
-      int imin = 0;
-      int imax = 0;
-      int jmin = 0;
-      int jmax = 0;
-      ib_decide_loop_size(1, isize, dx, pr, px  - xoffs, &imin, &imax);
-      ib_decide_loop_size(1, jsize, dy, pr, py_ - yoffs, &jmin, &jmax);
-      for(int j = jmin; j <= jmax; j++){
-        const double y = yoffs + 0.5 * (2 * j - 1) * dy;
-        for(int i = imin; i <= imax; i++){
-          const double x = xoffs + 0.5 * (2 * i - 1) * dx;
-          const double w = ib_s_weight(
-              deltas,
-              pr,
-              (double [NDIMS]){px, py_},
-              (double [NDIMS]){x, y}
-          );
-          const double ux_p = pux - pvz * (y - py_);
-          const double uy_p = puy + pvz * (x - px );
-          const double ux_f = + 0.5 * UX(i  , j  ) + 0.5 * UX(i+1, j  );
-          const double uy_f = + 0.5 * UY(i  , j  ) + 0.5 * UY(i  , j+1);
-          const double fx = w * (ux_p - ux_f) / dt;
-          const double fy = w * (uy_p - uy_f) / dt;
-          IBFX(i, j) += fx * dt;
-          IBFY(i, j) += fy * dt;
-          *fux -= + fx * cellsize / pm;
-          *fuy -= + fy * cellsize / pm;
-          *tvz -= - (y - py_) * (fx * cellsize) / pmi;
-          *tvz -= + (x - px ) * (fy * cellsize) / pmi;
-        }
-      }
-    }
-#else
     for(int zper = -1; zper <= 1; zper++){
       double pz_ = pz + lz * zper;
       for(int yper = -1; yper <= 1; yper++){
@@ -233,12 +150,9 @@ static int exchange_momentum(
         }
       }
     }
-#endif
     update_boundaries(domain, &ib->ibfx);
     update_boundaries(domain, &ib->ibfy);
-#if NDIMS == 3
     update_boundaries(domain, &ib->ibfz);
-#endif
   }
   return 0;
 }
@@ -250,28 +164,13 @@ static int update_predicted_velocity(
 ){
   const int isize = domain->mysizes[0];
   const int jsize = domain->mysizes[1];
-#if NDIMS == 3
   const int ksize = domain->mysizes[2];
-#endif
   double * ux = fluid->ux.data;
   double * uy = fluid->uy.data;
-#if NDIMS == 3
   double * uz = fluid->uz.data;
-#endif
   const double * ibfx = ib->ibfx.data;
   const double * ibfy = ib->ibfy.data;
-#if NDIMS == 3
   const double * ibfz = ib->ibfz.data;
-#endif
-#if NDIMS == 2
-  for(int j = 1; j <= jsize; j++){
-    for(int i = 2; i <= isize; i++){
-      UX(i, j) +=
-        + 0.5 * IBFX(i-1, j  )
-        + 0.5 * IBFX(i  , j  );
-    }
-  }
-#else
   for(int k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 2; i <= isize; i++){
@@ -281,19 +180,9 @@ static int update_predicted_velocity(
       }
     }
   }
-#endif
   if(0 != fluid_update_boundaries_ux(domain, &fluid->ux)){
     return 1;
   }
-#if NDIMS == 2
-  for(int j = 1; j <= jsize; j++){
-    for(int i = 1; i <= isize; i++){
-      UY(i, j) +=
-        + 0.5 * IBFY(i  , j-1)
-        + 0.5 * IBFY(i  , j  );
-    }
-  }
-#else
   for(int k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 1; i <= isize; i++){
@@ -303,11 +192,9 @@ static int update_predicted_velocity(
       }
     }
   }
-#endif
   if(0 != fluid_update_boundaries_uy(domain, &fluid->uy)){
     return 1;
   }
-#if NDIMS == 3
   for(int k = 1; k <= ksize; k++){
     for(int j = 1; j <= jsize; j++){
       for(int i = 1; i <= isize; i++){
@@ -320,7 +207,6 @@ static int update_predicted_velocity(
   if(0 != fluid_update_boundaries_uz(domain, &fluid->uz)){
     return 1;
   }
-#endif
   return 0;
 }
 
@@ -333,45 +219,29 @@ static int synchronise_information(
   const size_t nitems = ib->nitems;
   particle_t * particles = ib->particles;
   // prepare message buffer
-#if NDIMS == 2
-  const size_t nvars = 3;
-#else
   const size_t nvars = 6;
-#endif
   double * buf = memory_calloc(nvars * nitems, sizeof(double));
   // pack
   for(size_t n = 0; n < nitems; n++){
     particle_t * p = particles + n;
-#if NDIMS == 2
-    buf[nvars * n + 0] = p->fux;
-    buf[nvars * n + 1] = p->fuy;
-    buf[nvars * n + 2] = p->tvz;
-#else
     buf[nvars * n + 0] = p->fux;
     buf[nvars * n + 1] = p->fuy;
     buf[nvars * n + 2] = p->fuz;
     buf[nvars * n + 3] = p->tvx;
     buf[nvars * n + 4] = p->tvy;
     buf[nvars * n + 5] = p->tvz;
-#endif
   }
   // sum up all
   MPI_Allreduce(MPI_IN_PLACE, buf, nvars * nitems, MPI_DOUBLE, MPI_SUM, comm_cart);
   // unpack
   for(size_t n = 0; n < nitems; n++){
     particle_t * p = particles + n;
-#if NDIMS == 2
-    p->fux = buf[nvars * n + 0];
-    p->fuy = buf[nvars * n + 1];
-    p->tvz = buf[nvars * n + 2];
-#else
     p->fux = buf[nvars * n + 0];
     p->fuy = buf[nvars * n + 1];
     p->fuz = buf[nvars * n + 2];
     p->tvx = buf[nvars * n + 3];
     p->tvy = buf[nvars * n + 4];
     p->tvz = buf[nvars * n + 5];
-#endif
   }
   memory_free(buf);
   return 0;
